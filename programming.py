@@ -1,0 +1,70 @@
+import requests
+import csv
+import re
+
+def get_url(year, month):
+	return f"https://lishi.tianqi.com/foshan/{year}{month:02d}.html"
+
+def parse(page_content):
+	# 网页源码为 bytes，需解码
+	text = page_content.decode('utf-8', errors='ignore')
+	# 正则提取气温数组和日期
+	hightemp = re.findall(r'var hightemp = \[(.*?)\];', text)
+	lowtemp = re.findall(r'var lowtemp = \[(.*?)\];', text)
+	timeaxis = re.findall(r'var timeaxis = \[(.*?)\];', text)
+	if not hightemp or not lowtemp or not timeaxis:
+		return []
+	# 处理为列表
+	hightemp = [x.strip().strip('"') for x in hightemp[0].split(',')]
+	lowtemp = [x.strip().strip('"') for x in lowtemp[0].split(',')]
+	timeaxis = [x.strip() for x in timeaxis[0].split(',')]
+	# 日期格式：假设为 "YYYY-MM-DD"，如无年份则补全
+	data = []
+	for i in range(len(timeaxis)):
+		# 日期格式为 "年-月-日"
+		day = timeaxis[i]
+		# 需从外部传入当前年份和月份，暂用占位
+		# 这里返回 (day, hightemp, lowtemp)，主函数负责补全年月
+		data.append((day, hightemp[i], lowtemp[i]))
+	return data
+
+def fetch_temperature_data(start_year, start_month, end_year, end_month):
+    results = []
+    year, month = start_year, start_month
+    while (year < end_year) or (year == end_year and month <= end_month):
+        url = get_url(year, month)
+        print(f"正在爬取 {year}年{month}月: {url}")
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            month_data = parse(response.content)
+            print(f"解析结果: {month_data}")
+            # 补全年月，保存为 YYYY-MM-DD, 最高气温, 最低气温
+            for item in month_data:
+                day, high, low = item
+                date_str = f"{year}-{month:02d}-{day.zfill(2)}"
+                results.append([date_str, high, low])
+        except Exception as e:
+            print(f"跳过 {year}-{month}: {e}")
+        if month == 12:
+            year += 1
+            month = 1
+        else:
+            month += 1
+    return results
+
+def save_to_csv(data, filename):
+	with open(filename, 'w', newline='', encoding='utf-8') as f:
+		writer = csv.writer(f)
+		writer.writerow(['Date', 'MaxTemp', 'MinTemp'])
+		writer.writerows(data)
+
+if __name__ == "__main__":
+	start_year, start_month = 2021, 7
+	end_year, end_month = 2025, 7
+	data = fetch_temperature_data(start_year, start_month, end_year, end_month)
+	save_to_csv(data, 'foshan_temperature_2021-2025.csv')
+	print("数据已保存到 foshan_temperature_2021-2025.csv")
