@@ -63,6 +63,33 @@ def save_to_csv(data, filename):
 		writer.writerows(data)
 
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+def plot_heatmap_animation(csv_file, gif_file):
+	import numpy as np
+	df = pd.read_csv(csv_file)
+	df['Year'] = pd.to_datetime(df['Date']).dt.year
+	df['Month'] = pd.to_datetime(df['Date']).dt.month
+	# 统计每年每月的最高气温
+	pivot = df.pivot_table(index='Year', columns='Month', values='MaxTemp', aggfunc='mean')
+	years = pivot.index.tolist()
+	months = pivot.columns.tolist()
+	data = pivot.values
+	fig, ax = plt.subplots(figsize=(10, 6))
+	def update(i):
+		ax.clear()
+		im = ax.imshow(data[:i+1, :], cmap='hot', aspect='auto', vmin=np.nanmin(data), vmax=np.nanmax(data))
+		ax.set_xticks(np.arange(len(months)))
+		ax.set_xticklabels(months)
+		ax.set_yticks(np.arange(i+1))
+		ax.set_yticklabels(years[:i+1])
+		ax.set_xlabel('Month')
+		ax.set_ylabel('Year')
+		ax.set_title(f'Foshan Max Temperature Heatmap (Up to {years[i]})')
+		fig.colorbar(im, ax=ax, orientation='vertical')
+	ani = animation.FuncAnimation(fig, update, frames=len(years), repeat=False)
+	ani.save(gif_file, writer='pillow', fps=1)
+	plt.close()
+	print(f"热力图动画已保存为 {gif_file}")
 import pandas as pd
 
 def plot_monthly_boxplot(csv_file, img_file):
@@ -96,3 +123,5 @@ if __name__ == "__main__":
 	print("数据已保存到 foshan_temperature_2021-2025.csv")
 	# 绘制箱型图
 	plot_monthly_boxplot('foshan_temperature_2021-2025.csv', 'monthly_temperature_boxplot.png')
+	# 绘制热力图动画
+	plot_heatmap_animation('foshan_temperature_2021-2025.csv', 'temperature_heatmap.gif')
