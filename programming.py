@@ -1,6 +1,12 @@
+
 import requests
 import csv
 import re
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.colors import ListedColormap
 
 def get_url(year, month):
 	return f"https://lishi.tianqi.com/foshan/{year}{month:02d}.html"
@@ -18,12 +24,10 @@ def parse(page_content):
 	hightemp = [x.strip().strip('"') for x in hightemp[0].split(',')]
 	lowtemp = [x.strip().strip('"') for x in lowtemp[0].split(',')]
 	timeaxis = [x.strip() for x in timeaxis[0].split(',')]
-	# 日期格式：假设为 "YYYY-MM-DD"，如无年份则补全
 	data = []
 	for i in range(len(timeaxis)):
 		# 日期格式为 "年-月-日"
 		day = timeaxis[i]
-		# 需从外部传入当前年份和月份，暂用占位
 		# 这里返回 (day, hightemp, lowtemp)，主函数负责补全年月
 		data.append((day, hightemp[i], lowtemp[i]))
 	return data
@@ -65,8 +69,6 @@ def save_to_csv(data, filename):
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 def plot_heatmap_animation(csv_file, gif_file):
-	import numpy as np
-	from matplotlib.colors import ListedColormap
 	df = pd.read_csv(csv_file)
 	df['Year'] = pd.to_datetime(df['Date']).dt.year
 	df['Month'] = pd.to_datetime(df['Date']).dt.month
