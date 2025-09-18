@@ -66,6 +66,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 def plot_heatmap_animation(csv_file, gif_file):
 	import numpy as np
+	from matplotlib.colors import ListedColormap
 	df = pd.read_csv(csv_file)
 	df['Year'] = pd.to_datetime(df['Date']).dt.year
 	df['Month'] = pd.to_datetime(df['Date']).dt.month
@@ -74,10 +75,15 @@ def plot_heatmap_animation(csv_file, gif_file):
 	years = pivot.index.tolist()
 	months = pivot.columns.tolist()
 	data = pivot.values
+	# 构造带有灰色缺失值的 colormap
+	cmap = plt.get_cmap('hot').copy()
+	cmap.set_bad(color='gray')
 	fig, ax = plt.subplots(figsize=(10, 6))
 	def update(i):
 		ax.clear()
-		im = ax.imshow(data[:i+1, :], cmap='hot', aspect='auto', vmin=np.nanmin(data), vmax=np.nanmax(data))
+		# 用 np.ma.masked_invalid 标记缺失值
+		show_data = np.ma.masked_invalid(data[:i+1, :])
+		im = ax.imshow(show_data, cmap=cmap, aspect='auto', vmin=np.nanmin(data), vmax=np.nanmax(data))
 		ax.set_xticks(np.arange(len(months)))
 		ax.set_xticklabels(months)
 		ax.set_yticks(np.arange(i+1))
