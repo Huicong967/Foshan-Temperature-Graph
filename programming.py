@@ -62,9 +62,37 @@ def save_to_csv(data, filename):
 		writer.writerow(['Date', 'MaxTemp', 'MinTemp'])
 		writer.writerows(data)
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def plot_monthly_boxplot(csv_file, img_file):
+	# 读取数据
+	df = pd.read_csv(csv_file)
+	# 提取月份
+	df['Month'] = pd.to_datetime(df['Date']).dt.month
+	# 按月份分组，收集所有年份的气温
+	month_temp = {m: [] for m in range(1, 13)}
+	for _, row in df.iterrows():
+		month = row['Month']
+		# 最高气温
+		month_temp[month].append(float(row['MaxTemp']))
+	# 按月份顺序准备箱图数据
+	data_for_box = [month_temp[m] for m in range(1, 13)]
+	plt.figure(figsize=(12, 6))
+	plt.boxplot(data_for_box, labels=[str(m) for m in range(1, 13)])
+	plt.xlabel('Month')
+	plt.ylabel('Max Temperature (°C)')
+	plt.title('Monthly Max Temperature Boxplot (2021-2025)')
+	plt.grid(True, axis='y', linestyle='--', alpha=0.5)
+	plt.savefig(img_file)
+	plt.close()
+	print(f"箱型图已保存为 {img_file}")
+
 if __name__ == "__main__":
 	start_year, start_month = 2021, 7
 	end_year, end_month = 2025, 7
 	data = fetch_temperature_data(start_year, start_month, end_year, end_month)
 	save_to_csv(data, 'foshan_temperature_2021-2025.csv')
 	print("数据已保存到 foshan_temperature_2021-2025.csv")
+	# 绘制箱型图
+	plot_monthly_boxplot('foshan_temperature_2021-2025.csv', 'monthly_temperature_boxplot.png')
