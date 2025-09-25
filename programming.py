@@ -148,9 +148,9 @@ def plot_line_animation(csv_file, gif_file):
 
 # ================== 主流程入口 ==================
 if __name__ == "__main__":
-	# 设置采集区间
-	start_year, start_month = 2021, 1
-	end_year, end_month = 2025, 12
+	# 设置采集区间（仅采集2021年7月至2025年7月）
+	start_year, start_month = 2021, 7
+	end_year, end_month = 2025, 7
 	# 采集数据
 	data = fetch_temperature_data(start_year, start_month, end_year, end_month)
 	# 保存为csv
